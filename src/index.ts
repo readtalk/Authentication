@@ -25,7 +25,7 @@ export default {
     const url = new URL(request.url);
     if (url.pathname === "/") {
       url.searchParams.set("redirect_uri", url.origin + "/callback");
-      url.searchParams.set("client_id", "your-client-id");
+      url.searchParams.set("user_id", "your-user-id");
       url.searchParams.set("response_type", "code");
       url.pathname = "/authorize";
       return Response.redirect(url.toString());
@@ -60,7 +60,7 @@ export default {
       },
       theme: {
         title: "Authentication",
-        primary: "#000000",
+        primary: "#FF0000",
         favicon: "https://raw.githubusercontent.com/readtalk/asean/refs/heads/main/public/favicon.ico",
         logo: {
           dark: "https://raw.githubusercontent.com/readtalk/asean/refs/heads/main/public/brand.png",
@@ -79,7 +79,7 @@ export default {
         // Override: success redirect URL
         // query params userID email personalize welcome)
         return Response.redirect(
-          `https://asean.readtalk.workers.dev/callback?userId=${userID}&email=${encodeURIComponent(value.email)}&authentication=true`,
+          `https://asean.readtalk.workers.dev/?userId=${userID}&email=${encodeURIComponent(value.email)}&authentication=true`,
           302
         );
       },
