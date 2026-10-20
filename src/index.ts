@@ -61,11 +61,11 @@ export default {
       theme: {
         title: "Authentication",
         primary: "#000000",
-        favicon: "https://readtalk.pages.dev/vite.svg",
+        favicon: "https://raw.githubusercontent.com/readtalk/asean/refs/heads/main/public/favicon.ico",
         logo: {
-          dark: "https://readtalk.pages.dev/vite.svg",
+          dark: "https://raw.githubusercontent.com/readtalk/asean/refs/heads/main/public/brand.png",
           light:
-            "https://readtalk.pages.dev/vite.svg",
+            "https://raw.githubusercontent.com/readtalk/asean/refs/heads/main/public/brand.png",
         },
       },
       success: async (ctx, value) => {
