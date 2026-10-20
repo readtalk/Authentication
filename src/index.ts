@@ -79,7 +79,7 @@ export default {
         // Override: success redirect URL
         // query params userID email personalize welcome)
         return Response.redirect(
-          `https://asean.readtalk.workers.dev/?userId=${userID}&email=${encodeURIComponent(value.email)}&authentication=true`,
+          `https://asean.readtalk.workers.dev/callback?userId=${userID}&email=${encodeURIComponent(value.email)}&authentication=true`,
           302
         );
       },
