@@ -1,3 +1,4 @@
+//
 {
 	"name": "openauth",
 	"description": "Deploy an OpenAuth server on Cloudflare Workers.",
