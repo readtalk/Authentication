@@ -10,7 +10,7 @@ import { object, string } from "valibot";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 
-export { DurableObject } from "./authentication/authentication";
+export { Authentication } from "./authentication/authentication";
 
 const subjects = createSubjects({
 	user: object({
