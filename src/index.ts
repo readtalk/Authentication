@@ -20,7 +20,6 @@ const subjects = createSubjects({
 });
 
 const app = new Hono();
-
 app.use('*', cors());
 
 app.get('/users', async (c) => {
@@ -35,11 +34,17 @@ app.get('/users/online', async (c) => {
 	return stub.fetch(c.req.raw);
 });
 
+app.all('/ws', async (c) => {
+	const id = c.env.DATA_DO.idFromName('default');
+	const stub = c.env.DATA_DO.get(id);
+	return stub.fetch(c.req.raw);
+});
+
 export default {
 	async fetch(request: Request, env: Env, ctx: ExecutionContext) {
 		const url = new URL(request.url);
 
-		if (url.pathname.startsWith('/users')) {
+		if (url.pathname.startsWith('/users') || url.pathname === '/ws') {
 			return app.fetch(request, env, ctx);
 		}
 
