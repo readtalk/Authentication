@@ -1,4 +1,4 @@
-# Authentication Serv
+# Authentication Data Server
 
 [![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/cloudflare/templates/tree/main/openauth-template)
 
@@ -38,7 +38,7 @@ A live public deployment of this template is available at [https://openauth-temp
    ```
 4. Create a [kv namespace](https://developers.cloudflare.com/kv/get-started/) with a binding named "AUTH_STORAGE":
    ```bash
-   npx wrangler kv namespace create AUTH_STORAGE
+   npx wrangler kv namespace create AUTH_KV
    ```
    ...and update the `kv_namespaces` -> `id` field in `wrangler.json` with the new namespace ID.
 5. Deploy the project!
