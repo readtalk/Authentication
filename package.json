@@ -5,7 +5,7 @@
 		"label": "OpenAuth Server",
 		"products": [
 			"Workers",
-            "Durable Object",
+			"Durable Objects",
 			"D1",
 			"KV"
 		],
@@ -28,6 +28,7 @@
 		"cf-typegen": "wrangler types",
 		"check": "tsc && wrangler deploy --dry-run",
 		"deploy": "wrangler deploy",
-		"dev": "wrangler dev"
+		"dev": "wrangler dev",
+		"predeploy": "wrangler d1 migrations apply DATA_DB --remote"
 	}
 }
