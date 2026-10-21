@@ -19,8 +19,6 @@ Outside of this repo, you can start a new project with this template using [C3](
 npm create cloudflare@latest -- --template=cloudflare/templates/openauth-template
 ```
 
-A live public deployment of this template is available at [https://openauth-template.templates.workers.dev](https://openauth-template.templates.workers.dev)
-
 ## Setup Steps
 
 1. Install the project dependencies with a package manager of your choice:
@@ -36,7 +34,7 @@ A live public deployment of this template is available at [https://openauth-temp
    ```bash
    npx wrangler d1 migrations apply --remote openauth-template-auth-db
    ```
-4. Create a [kv namespace](https://developers.cloudflare.com/kv/get-started/) with a binding named "AUTH_STORAGE":
+4. Create a [kv namespace](https://developers.cloudflare.com/kv/get-started/) with a binding named "AUTH_KV":
    ```bash
    npx wrangler kv namespace create AUTH_KV
    ```
