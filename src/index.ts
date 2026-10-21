@@ -1,4 +1,3 @@
-//
 import { issuer } from "@openauthjs/openauth";
 import {
 	CloudflareStorage,
