@@ -7,6 +7,8 @@ import { PasswordProvider } from "@openauthjs/openauth/provider/password";
 import { PasswordUI } from "@openauthjs/openauth/ui/password";
 import { createSubjects } from "@openauthjs/openauth/subject";
 import { object, string } from "valibot";
+import { Hono } from "hono";
+import { cors } from "hono/cors";
 
 export { AuthenticationDurableObject } from "./Authentication/authentication";
 
@@ -17,9 +19,30 @@ const subjects = createSubjects({
 	}),
 });
 
+const app = new Hono();
+
+app.use('*', cors());
+
+app.get('/users', async (c) => {
+	const id = c.env.DATA_DO.idFromName('default');
+	const stub = c.env.DATA_DO.get(id);
+	return stub.fetch(c.req.raw);
+});
+
+app.get('/users/online', async (c) => {
+	const id = c.env.DATA_DO.idFromName('default');
+	const stub = c.env.DATA_DO.get(id);
+	return stub.fetch(c.req.raw);
+});
+
 export default {
-	fetch(request: Request, env: Env, ctx: ExecutionContext) {
+	async fetch(request: Request, env: Env, ctx: ExecutionContext) {
 		const url = new URL(request.url);
+
+		if (url.pathname.startsWith('/users')) {
+			return app.fetch(request, env, ctx);
+		}
+
 		if (url.pathname === "/") {
 			url.searchParams.set("redirect_uri", url.origin + "/callback");
 			url.searchParams.set("client_id", "your-client-id");
