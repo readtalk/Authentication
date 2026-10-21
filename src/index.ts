@@ -40,6 +40,38 @@ app.all('/ws', async (c) => {
 	return stub.fetch(c.req.raw);
 });
 
+app.get('/settings', async (c) => {
+	const authHeader = c.req.header("Authorization");
+	if (!authHeader || !authHeader.startsWith("Bearer ")) {
+		return c.json({ success: false, error: "Unauthorized" }, 401);
+	}
+
+	const token = authHeader.replace("Bearer ", "");
+	
+	try {
+		const payloadBase64 = token.split(".")[1];
+		const payload = JSON.parse(atob(payloadBase64));
+		const userId = payload.properties?.id || payload.sub;
+
+		if (!userId) {
+			return c.json({ success: false, error: "Invalid token" }, 401);
+		}
+
+		const user = await c.env.DATA_DB.prepare(
+			`SELECT username, yourname, date_of_birth FROM user WHERE id = ?`
+		).bind(userId).first();
+
+		if (!user) {
+			return c.json({ success: false, error: "User not found" }, 404);
+		}
+
+		return c.json({ success: true, user });
+	} catch (error) {
+		console.error("Settings fetch error:", error);
+		return c.json({ success: false, error: "Failed to fetch settings" }, 500);
+	}
+});
+
 app.post('/settings', async (c) => {
 	const authHeader = c.req.header("Authorization");
 	if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -129,7 +161,15 @@ export default {
 			},
 			success: async (ctx, value) => {
 				const userID = await getOrCreateUser(env, value.email);
-				
+
+				const id = env.DATA_DO.idFromName('default');
+				const stub = env.DATA_DO.get(id);
+				await stub.fetch('https://internal/users/sync', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ id: userID, email: value.email })
+				});
+
 				return ctx.subject("user", {
 					id: userID,
 					email: value.email,
