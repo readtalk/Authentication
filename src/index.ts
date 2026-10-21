@@ -11,7 +11,7 @@ import { object, string } from "valibot";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 
-export { AuthenticationDurableObject } from "./authentication/authentication";
+export { DurableObject } from "./authentication/authentication";
 
 const subjects = createSubjects({
 	user: object({
