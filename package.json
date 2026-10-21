@@ -4,8 +4,7 @@
 	"cloudflare": {
 		"label": "OpenAuth Server",
 		"products": [
-			"Workers",
-			"Durable Objects",
+			"Workers",			
 			"D1",
 			"KV"
 		],
