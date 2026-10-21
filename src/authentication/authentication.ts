@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { DurableObject } from "cloudflare:workers";
 
-export class AuthenticationDurableObject extends DurableObject {
+export class DurableObject extends DurableObject {
     private app: Hono = new Hono();
     public sql: SqlStorage;
     public connections = new Map<string, WebSocket>();
