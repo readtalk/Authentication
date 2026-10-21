@@ -1,4 +1,3 @@
-//
 import { issuer } from "@openauthjs/openauth";
 import {
 	CloudflareStorage,
@@ -24,9 +23,10 @@ const app = new Hono();
 app.use('*', cors());
 
 app.get('/users', async (c) => {
-	const id = c.env.DATA_DO.idFromName('default');
-	const stub = c.env.DATA_DO.get(id);
-	return stub.fetch(c.req.raw);
+	const users = await c.env.DATA_DB.prepare(
+		`SELECT id, email, created_at FROM user`
+	).all();
+	return c.json({ success: true, users: users.results });
 });
 
 app.get('/users/online', async (c) => {
@@ -91,15 +91,7 @@ export default {
 			},
 			success: async (ctx, value) => {
 				const userID = await getOrCreateUser(env, value.email);
-
-				const id = env.DATA_DO.idFromName('default');
-				const stub = env.DATA_DO.get(id);
-				await stub.fetch('https://internal/users/sync', {
-					method: 'POST',
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({ id: userID, email: value.email })
-				});
-
+				
 				return ctx.subject("user", {
 					id: userID,
 					email: value.email,
