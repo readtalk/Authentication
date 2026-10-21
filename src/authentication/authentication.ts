@@ -1,4 +1,3 @@
-//
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { DurableObject } from "cloudflare:workers";
@@ -49,6 +48,67 @@ export class Authentication extends DurableObject {
         this.app.get('/users/online', async (c) => {
             const onlineUserIds = Array.from(this.connections.keys());
             return c.json({ success: true, onlineUsers: onlineUserIds });
+        });
+
+        this.app.get('/chats', async (c) => {
+            const sessionId = c.req.header('X-Session-Id') || '';
+            const { valid, userId } = await this.validateSession(sessionId);
+
+            if (!valid || !userId) return c.json({ success: false, error: 'Invalid session' }, 401);
+
+            const chats = this.sql.exec(`
+                SELECT 
+                    ch.*,
+                    COUNT(DISTINCT cu2.user_id) as member_count,
+                    GROUP_CONCAT(cu2.user_id) as member_ids
+                FROM chat ch
+                INNER JOIN chat_user cu ON ch.id = cu.chat_id
+                LEFT JOIN chat_user cu2 ON ch.id = cu2.chat_id
+                WHERE cu.user_id = ?
+                GROUP BY ch.id
+                ORDER BY ch.created_at DESC
+            `, userId).toArray();
+
+            const formatted = chats.map((ch: any) => ({
+                ...ch,
+                member_ids: ch.member_ids ? ch.member_ids.split(',') : []
+            }));
+
+            return c.json({ success: true, chats: formatted });
+        });
+
+        this.app.post('/chats', async (c) => {
+            const sessionId = c.req.header('X-Session-Id');
+            if (!sessionId) return c.json({ success: false, error: 'No session' }, 401);
+
+            const { valid, userId } = await this.validateSession(sessionId);
+            if (!valid || !userId) return c.json({ success: false, error: 'Invalid session' }, 401);
+
+            const { name, description, is_private, member_ids } = await c.req.json();
+            if (!name?.trim()) return c.json({ success: false, error: 'Chat name is required' }, 400);
+
+            const chatId = crypto.randomUUID();
+
+            this.sql.exec(
+                `INSERT INTO chat (id, name, description, is_private) VALUES (?, ?, ?, ?)`,
+                chatId, name, description || null, is_private ? 1 : 0
+            );
+
+            this.sql.exec(
+                `INSERT INTO chat_user (id, chat_id, user_id) VALUES (?, ?, ?)`,
+                crypto.randomUUID(), chatId, userId
+            );
+
+            if (member_ids && Array.isArray(member_ids)) {
+                for (const mid of member_ids.filter((id: string) => id !== userId)) {
+                    this.sql.exec(
+                        `INSERT OR IGNORE INTO chat_user (id, chat_id, user_id) VALUES (?, ?, ?)`,
+                        crypto.randomUUID(), chatId, mid
+                    );
+                }
+            }
+
+            return c.json({ success: true, chat_id: chatId });
         });
     }
 
@@ -101,5 +161,30 @@ export class Authentication extends DurableObject {
         }
 
         return this.app.fetch(request);
+    }
+
+    private async validateSession(sessionId: string | null): Promise<{ valid: boolean; userId?: string }> {
+        if (!sessionId) return { valid: false };
+
+        const [session] = this.sql.exec(
+            `SELECT user_id FROM session WHERE id = ? AND expires_at > unixepoch() LIMIT 1`,
+            sessionId
+        ).toArray() as { user_id: string }[];
+
+        if (!session) return { valid: false };
+
+        return { valid: true, userId: session.user_id };
+    }
+
+    public async checkChatAccess(sessionId: string, chatId: string): Promise<boolean> {
+        const { valid, userId } = await this.validateSession(sessionId);
+        if (!valid || !userId) return false;
+
+        const access = this.sql.exec(
+            `SELECT 1 FROM chat_user WHERE chat_id = ? AND user_id = ? LIMIT 1`,
+            chatId, userId
+        ).toArray();
+
+        return access.length > 0;
     }
 }
