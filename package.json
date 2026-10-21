@@ -5,6 +5,7 @@
 		"label": "OpenAuth Server",
 		"products": [
 			"Workers",
+			"Durable Objects",
 			"D1",
 			"KV"
 		],
