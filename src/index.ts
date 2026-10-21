@@ -23,10 +23,9 @@ const app = new Hono();
 app.use('*', cors());
 
 app.get('/users', async (c) => {
-	const users = await c.env.DATA_DB.prepare(
-		`SELECT id, email, created_at FROM user`
-	).all();
-	return c.json({ success: true, users: users.results });
+	const id = c.env.DATA_DO.idFromName('default');
+	const stub = c.env.DATA_DO.get(id);
+	return stub.fetch(c.req.raw);
 });
 
 app.get('/users/online', async (c) => {
