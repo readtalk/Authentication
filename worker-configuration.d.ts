@@ -4,8 +4,7 @@
 // Runtime types generated with workerd@1.20260921.1 2025-10-08 nodejs_compat
 interface __BaseEnv_Env {
 	DATA_KV: KVNamespace;
-	DATA_DB: D1Database;
-	DATA_DO: DurableObject;
+	DATA_DB: D1Database;	
 }
 declare namespace Cloudflare {
 	interface GlobalProps {
