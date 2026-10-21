@@ -32,13 +32,32 @@ app.get('/users', async (c) => {
 app.get('/users/online', async (c) => {
 	const id = c.env.DATA_DO.idFromName('default');
 	const stub = c.env.DATA_DO.get(id);
-	return stub.fetch(c.req.raw);
+	
+	const doUrl = new URL('https://do/users/online');
+	return stub.fetch(doUrl.toString());
 });
 
 app.all('/ws', async (c) => {
-	const id = c.env.DATA_DO.idFromName('default');
-	const stub = c.env.DATA_DO.get(id);
-	return stub.fetch(c.req.raw);
+	const token = c.req.query('token');
+	if (!token) return c.json({ error: "Token required" }, 401);
+
+	try {
+		const payloadBase64 = token.split(".")[1];
+		const payload = JSON.parse(atob(payloadBase64));
+		const userId = payload.properties?.id || payload.sub;
+
+		if (!userId) return c.json({ error: "Invalid token" }, 401);
+
+		const id = c.env.DATA_DO.idFromName('default');
+		const stub = c.env.DATA_DO.get(id);
+
+		const doUrl = new URL('https://do/ws');
+		doUrl.searchParams.set('userId', userId);
+
+		return stub.fetch(doUrl.toString(), c.req.raw);
+	} catch (error) {
+		return c.json({ error: "Invalid token" }, 401);
+	}
 });
 
 app.all('/chats*', async (c) => {
@@ -53,10 +72,13 @@ app.all('/chats*', async (c) => {
 	const id = c.env.DATA_DO.idFromName('default');
 	const stub = c.env.DATA_DO.get(id);
 	
+	const doUrl = new URL('https://do' + c.req.path);
+	doUrl.search = c.req.url.split('?')[1] || '';
+
 	const newHeaders = new Headers(c.req.raw.headers);
 	newHeaders.set("X-User-Id", userId);
 	
-	const newRequest = new Request(c.req.raw.url, {
+	const newRequest = new Request(doUrl.toString(), {
 		method: c.req.method,
 		headers: newHeaders,
 		body: c.req.raw.body
