@@ -7,7 +7,7 @@ export class Authentication extends DurableObject {
     public sql: SqlStorage;
     public connections = new Map<string, WebSocket>();
 
-    constructor(ctx: DurableObjectState, env: Env) {
+    constructor(ctx: DurableObjectState, env: any) {
         super(ctx, env);
         this.sql = ctx.storage.sql;
         this.setup();
@@ -53,6 +53,18 @@ export class Authentication extends DurableObject {
 
     private setupRoutes() {
         this.app.use('*', cors());
+
+        this.app.post('/users/sync', async (c) => {
+            const { id, email } = await c.req.json();
+            if (!id || !email) return c.json({ success: false, error: 'id and email required' }, 400);
+
+            const existing = this.sql.exec(`SELECT id FROM user WHERE id = ?`, id).toArray();
+            if (existing.length === 0) {
+                this.sql.exec(`INSERT INTO user (id, email) VALUES (?, ?)`, id, email);
+                return c.json({ success: true, created: true });
+            }
+            return c.json({ success: true, created: false });
+        });
 
         this.app.get('/users', async (c) => {
             const users = this.sql.exec(`SELECT id, email, first_name, last_name, avatar FROM user`).toArray();
