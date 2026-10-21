@@ -1,4 +1,3 @@
-//
 import { issuer } from "@openauthjs/openauth";
 import {
 	CloudflareStorage,
@@ -81,8 +80,8 @@ export default {
 				),
 			},
 			theme: {
-				title: "Authentication",
-				primary: "#FFFFFF",
+				title: "OpenAuth",
+				primary: "#FF0000",
 				favicon: "https://raw.githubusercontent.com/readtalk/asean/refs/heads/main/public/favicon.ico",
 				logo: {
 					dark: "https://raw.githubusercontent.com/readtalk/asean/refs/heads/main/public/brand.png",
