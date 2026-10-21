@@ -4,7 +4,7 @@
 	"cloudflare": {
 		"label": "OpenAuth Server",
 		"products": [
-			"Workers",			
+			"Workers",
 			"D1",
 			"KV"
 		],
@@ -27,7 +27,6 @@
 		"cf-typegen": "wrangler types",
 		"check": "tsc && wrangler deploy --dry-run",
 		"deploy": "wrangler deploy",
-		"dev": "wrangler dev",
-		"predeploy": "wrangler d1 migrations apply DATA_DB --remote"
+		"dev": "wrangler dev"
 	}
 }
