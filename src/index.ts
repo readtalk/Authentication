@@ -197,8 +197,8 @@ export default {
 				),
 			},
 			theme: {
-				title: "OpenAuth",
-				primary: "#FF0000",
+				title: "Authentication",
+				primary: "#FFFFFF",
 				favicon: "https://raw.githubusercontent.com/readtalk/asean/refs/heads/main/public/favicon.ico",
 				logo: {
 					dark: "https://raw.githubusercontent.com/readtalk/asean/refs/heads/main/public/brand.png",
