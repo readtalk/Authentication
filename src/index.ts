@@ -41,6 +41,54 @@ app.all('/ws', async (c) => {
 	return stub.fetch(c.req.raw);
 });
 
+app.get('/chats', async (c) => {
+	const authHeader = c.req.header("Authorization");
+	if (!authHeader || !authHeader.startsWith("Bearer ")) {
+		return c.json({ success: false, error: "Unauthorized" }, 401);
+	}
+	const token = authHeader.replace("Bearer ", "");
+	const payload = JSON.parse(atob(token.split(".")[1]));
+	const userId = payload.properties?.id || payload.sub;
+
+	const id = c.env.DATA_DO.idFromName('default');
+	const stub = c.env.DATA_DO.get(id);
+	
+	const newHeaders = new Headers(c.req.raw.headers);
+	newHeaders.set("X-User-Id", userId);
+	
+	const newRequest = new Request(c.req.raw.url, {
+		method: c.req.method,
+		headers: newHeaders,
+		body: c.req.raw.body
+	});
+
+	return stub.fetch(newRequest);
+});
+
+app.post('/chats', async (c) => {
+	const authHeader = c.req.header("Authorization");
+	if (!authHeader || !authHeader.startsWith("Bearer ")) {
+		return c.json({ success: false, error: "Unauthorized" }, 401);
+	}
+	const token = authHeader.replace("Bearer ", "");
+	const payload = JSON.parse(atob(token.split(".")[1]));
+	const userId = payload.properties?.id || payload.sub;
+
+	const id = c.env.DATA_DO.idFromName('default');
+	const stub = c.env.DATA_DO.get(id);
+	
+	const newHeaders = new Headers(c.req.raw.headers);
+	newHeaders.set("X-User-Id", userId);
+	
+	const newRequest = new Request(c.req.raw.url, {
+		method: c.req.method,
+		headers: newHeaders,
+		body: c.req.raw.body
+	});
+
+	return stub.fetch(newRequest);
+});
+
 app.get('/settings', async (c) => {
 	const authHeader = c.req.header("Authorization");
 	if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -116,7 +164,7 @@ export default {
 	async fetch(request: Request, env: Env, ctx: ExecutionContext) {
 		const url = new URL(request.url);
 
-		if (url.pathname.startsWith('/users') || url.pathname === '/ws' || url.pathname === '/settings') {
+		if (url.pathname.startsWith('/users') || url.pathname === '/ws' || url.pathname === '/settings' || url.pathname.startsWith('/chats')) {
 			return app.fetch(request, env, ctx);
 		}
 
