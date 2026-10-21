@@ -16,12 +16,14 @@
 			"database_id": "9c6d47de-7136-494a-96aa-3e16648a4880"
 		}
 	],
-	"exports": {
-		"Authentication": {
-			"type": "durable-object",
-			"storage": "sqlite"
+	"migrations": [
+		{
+			"new_sqlite_classes": [
+				"Authentication"
+			],
+			"tag": "v1"
 		}
-	},
+	],
 	"durable_objects": {
 		"bindings": [
 			{
