@@ -44,11 +44,8 @@ export class Authentication extends DurableObject {
         });
 
         this.app.get('/chats', async (c) => {
-            const sessionId = c.req.header('X-Session-Id') || '';
-            if (!sessionId) return c.json({ success: false, error: 'No session' }, 401);
-
-            const { valid, userId } = await this.validateSession(sessionId);
-            if (!valid || !userId) return c.json({ success: false, error: 'Invalid session' }, 401);
+            const userId = c.req.header('X-User-Id');
+            if (!userId) return c.json({ success: false, error: 'No user ID' }, 401);
 
             const chats = this.sql.exec(`
                 SELECT 
@@ -72,11 +69,8 @@ export class Authentication extends DurableObject {
         });
 
         this.app.post('/chats', async (c) => {
-            const sessionId = c.req.header('X-Session-Id');
-            if (!sessionId) return c.json({ success: false, error: 'No session' }, 401);
-
-            const { valid, userId } = await this.validateSession(sessionId);
-            if (!valid || !userId) return c.json({ success: false, error: 'Invalid session' }, 401);
+            const userId = c.req.header('X-User-Id');
+            if (!userId) return c.json({ success: false, error: 'No user ID' }, 401);
 
             const { name, description, is_private, member_ids } = await c.req.json();
             if (!name?.trim()) return c.json({ success: false, error: 'Chat name is required' }, 400);
@@ -106,18 +100,12 @@ export class Authentication extends DurableObject {
         });
     }
 
-    public async clientConnected(sessionId?: string) {
+    public async clientConnected(userId?: string) {
         const [client, server] = Object.values(new WebSocketPair());
 
-        if (!sessionId) {
-            server.close(1008, 'Session ID is required');
-            return new Response('Session ID is required', { status: 400 });
-        }
-
-        const { valid, userId } = await this.validateSession(sessionId);
-        if (!valid || !userId) {
-            server.close(1008, 'Invalid session');
-            return new Response('Invalid session', { status: 401 });
+        if (!userId) {
+            server.close(1008, 'User ID is required');
+            return new Response('User ID is required', { status: 400 });
         }
 
         this.connections.set(userId, server);
@@ -154,37 +142,12 @@ export class Authentication extends DurableObject {
 
         if (url.pathname === '/ws') {
             if (request.headers.get('upgrade') === 'websocket') {
-                const sessionId = url.searchParams.get('sessionId') ?? '';
-                return this.clientConnected(sessionId);
+                const userId = url.searchParams.get('userId') ?? '';
+                return this.clientConnected(userId);
             }
             return new Response('Expected WebSocket', { status: 400 });
         }
 
         return this.app.fetch(request);
-    }
-
-    private async validateSession(sessionId: string | null): Promise<{ valid: boolean; userId?: string }> {
-        if (!sessionId) return { valid: false };
-
-        const [session] = this.sql.exec(
-            `SELECT user_id FROM session WHERE id = ? AND expires_at > unixepoch() LIMIT 1`,
-            sessionId
-        ).toArray() as { user_id: string }[];
-
-        if (!session) return { valid: false };
-
-        return { valid: true, userId: session.user_id };
-    }
-
-    public async checkChatAccess(sessionId: string, chatId: string): Promise<boolean> {
-        const { valid, userId } = await this.validateSession(sessionId);
-        if (!valid || !userId) return false;
-
-        const access = this.sql.exec(
-            `SELECT 1 FROM chat_user WHERE chat_id = ? AND user_id = ? LIMIT 1`,
-            chatId, userId
-        ).toArray();
-
-        return access.length > 0;
     }
 }
