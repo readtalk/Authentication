@@ -16,14 +16,6 @@
 			"database_id": "9c6d47de-7136-494a-96aa-3e16648a4880"
 		}
 	],
-	"durable_objects": {
-		"bindings": [
-			{
-				"class_name": "Authentication",
-				"name": "DATA_DO"
-			}
-		]
-	},
 	"observability": {
 		"enabled": true
 	},
