@@ -15,22 +15,6 @@ export class Authentication extends DurableObject {
 
     private async setup() {
         this.sql.exec(`
-            CREATE TABLE IF NOT EXISTS user (
-                id TEXT PRIMARY KEY,
-                email TEXT NOT NULL UNIQUE,
-                first_name TEXT,
-                last_name TEXT,
-                avatar TEXT,
-                created_at INTEGER DEFAULT (unixepoch())
-            );
-
-            CREATE TABLE IF NOT EXISTS session (
-                id TEXT PRIMARY KEY,
-                user_id TEXT NOT NULL,
-                created_at INTEGER DEFAULT (unixepoch()),
-                expires_at INTEGER NOT NULL
-            );
-
             CREATE TABLE IF NOT EXISTS chat (
                 id TEXT PRIMARY KEY,
                 name TEXT NOT NULL,
@@ -54,40 +38,16 @@ export class Authentication extends DurableObject {
     private setupRoutes() {
         this.app.use('*', cors());
 
-        this.app.post('/users/sync', async (c) => {
-            const { id, email } = await c.req.json();
-            if (!id || !email) return c.json({ success: false, error: 'id and email required' }, 400);
-
-            const existing = this.sql.exec(`SELECT id FROM user WHERE id = ?`, id).toArray();
-            if (existing.length === 0) {
-                this.sql.exec(`INSERT INTO user (id, email) VALUES (?, ?)`, id, email);
-                return c.json({ success: true, created: true });
-            }
-            return c.json({ success: true, created: false });
-        });
-
-        this.app.get('/users', async (c) => {
-            const users = this.sql.exec(`SELECT id, email, first_name, last_name, avatar FROM user`).toArray();
-            return c.json({ success: true, users });
-        });
-
         this.app.get('/users/online', async (c) => {
             const onlineUserIds = Array.from(this.connections.keys());
-            if (onlineUserIds.length === 0) return c.json({ success: true, onlineUsers: [] });
-
-            const placeholders = onlineUserIds.map(() => '?').join(',');
-            const onlineUsers = this.sql.exec(
-                `SELECT id, email, first_name, last_name, avatar FROM user WHERE id IN (${placeholders})`,
-                ...onlineUserIds
-            ).toArray();
-
-            return c.json({ success: true, onlineUsers });
+            return c.json({ success: true, onlineUsers: onlineUserIds });
         });
 
         this.app.get('/chats', async (c) => {
             const sessionId = c.req.header('X-Session-Id') || '';
-            const { valid, userId } = await this.validateSession(sessionId);
+            if (!sessionId) return c.json({ success: false, error: 'No session' }, 401);
 
+            const { valid, userId } = await this.validateSession(sessionId);
             if (!valid || !userId) return c.json({ success: false, error: 'Invalid session' }, 401);
 
             const chats = this.sql.exec(`
