@@ -15,6 +15,10 @@ export class Authentication extends DurableObject {
 
     private async setup() {
         this.sql.exec(`
+            CREATE TABLE IF NOT EXISTS user_id (
+                id TEXT PRIMARY KEY
+            );
+
             CREATE TABLE IF NOT EXISTS chat (
                 id TEXT PRIMARY KEY,
                 name TEXT NOT NULL,
@@ -33,6 +37,11 @@ export class Authentication extends DurableObject {
         `);
 
         this.setupRoutes();
+    }
+
+    public async syncUserId(id: string) {
+        this.sql.exec(`INSERT OR IGNORE INTO user_id (id) VALUES (?)`, id);
+        return { success: true };
     }
 
     private setupRoutes() {
