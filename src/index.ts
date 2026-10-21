@@ -1,4 +1,3 @@
-//
 import { issuer } from "@openauthjs/openauth";
 import {
 	CloudflareStorage,
@@ -91,7 +90,15 @@ export default {
 			},
 			success: async (ctx, value) => {
 				const userID = await getOrCreateUser(env, value.email);
-				
+
+				const id = env.DATA_DO.idFromName('default');
+				const stub = env.DATA_DO.get(id);
+				await stub.fetch('https://internal/users/sync', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ id: userID, email: value.email })
+				});
+
 				return ctx.subject("user", {
 					id: userID,
 					email: value.email,
