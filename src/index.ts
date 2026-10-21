@@ -198,7 +198,7 @@ export default {
 			},
 			theme: {
 				title: "Authentication",
-				primary: "#FFFFFF",
+				primary: "#FF0000",
 				favicon: "https://raw.githubusercontent.com/readtalk/asean/refs/heads/main/public/favicon.ico",
 				logo: {
 					dark: "https://raw.githubusercontent.com/readtalk/asean/refs/heads/main/public/brand.png",
