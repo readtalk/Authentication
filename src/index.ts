@@ -41,31 +41,7 @@ app.all('/ws', async (c) => {
 	return stub.fetch(c.req.raw);
 });
 
-app.get('/chats', async (c) => {
-	const authHeader = c.req.header("Authorization");
-	if (!authHeader || !authHeader.startsWith("Bearer ")) {
-		return c.json({ success: false, error: "Unauthorized" }, 401);
-	}
-	const token = authHeader.replace("Bearer ", "");
-	const payload = JSON.parse(atob(token.split(".")[1]));
-	const userId = payload.properties?.id || payload.sub;
-
-	const id = c.env.DATA_DO.idFromName('default');
-	const stub = c.env.DATA_DO.get(id);
-	
-	const newHeaders = new Headers(c.req.raw.headers);
-	newHeaders.set("X-User-Id", userId);
-	
-	const newRequest = new Request(c.req.raw.url, {
-		method: c.req.method,
-		headers: newHeaders,
-		body: c.req.raw.body
-	});
-
-	return stub.fetch(newRequest);
-});
-
-app.post('/chats', async (c) => {
+app.all('/chats*', async (c) => {
 	const authHeader = c.req.header("Authorization");
 	if (!authHeader || !authHeader.startsWith("Bearer ")) {
 		return c.json({ success: false, error: "Unauthorized" }, 401);
@@ -210,7 +186,12 @@ export default {
 			},
 			success: async (ctx, value) => {
 				const userID = await getOrCreateUser(env, value.email);
+
+				const id = env.DATA_DO.idFromName('default');
+				const stub = env.DATA_DO.get(id);
 				
+				await (stub as any).syncUserId(userID);
+
 				return ctx.subject("user", {
 					id: userID,
 					email: value.email,
