@@ -7,8 +7,10 @@ import { PasswordProvider } from "@openauthjs/openauth/provider/password";
 import { PasswordUI } from "@openauthjs/openauth/ui/password";
 import { createSubjects } from "@openauthjs/openauth/subject";
 import { object, string } from "valibot";
+import { Hono } from "hono";
+import { cors } from "hono/cors";
 
-export { Authentication } from "./authentication/authentication";
+export { DurableObject } from "./authentication/authentication";
 
 const subjects = createSubjects({
 	user: object({
@@ -17,14 +19,33 @@ const subjects = createSubjects({
 	}),
 });
 
+const app = new Hono();
+app.use('*', cors());
+
+app.get('/users', async (c) => {
+	const id = c.env.DATA_DO.idFromName('default');
+	const stub = c.env.DATA_DO.get(id);
+	return stub.fetch(c.req.raw);
+});
+
+app.get('/users/online', async (c) => {
+	const id = c.env.DATA_DO.idFromName('default');
+	const stub = c.env.DATA_DO.get(id);
+	return stub.fetch(c.req.raw);
+});
+
+app.all('/ws', async (c) => {
+	const id = c.env.DATA_DO.idFromName('default');
+	const stub = c.env.DATA_DO.get(id);
+	return stub.fetch(c.req.raw);
+});
+
 export default {
 	async fetch(request: Request, env: Env, ctx: ExecutionContext) {
 		const url = new URL(request.url);
 
 		if (url.pathname.startsWith('/users') || url.pathname === '/ws') {
-			const id = env.DATA_DO.idFromName('default');
-			const stub = env.DATA_DO.get(id);
-			return stub.fetch(request);
+			return app.fetch(request, env, ctx);
 		}
 
 		if (url.pathname === "/") {
