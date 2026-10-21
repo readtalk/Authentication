@@ -40,11 +40,50 @@ app.all('/ws', async (c) => {
 	return stub.fetch(c.req.raw);
 });
 
+app.post('/settings', async (c) => {
+	const authHeader = c.req.header("Authorization");
+	if (!authHeader || !authHeader.startsWith("Bearer ")) {
+		return c.json({ success: false, error: "Unauthorized" }, 401);
+	}
+
+	const token = authHeader.replace("Bearer ", "");
+	
+	try {
+		const payloadBase64 = token.split(".")[1];
+		const payload = JSON.parse(atob(payloadBase64));
+		const userId = payload.properties?.id || payload.sub;
+
+		if (!userId) {
+			return c.json({ success: false, error: "Invalid token" }, 401);
+		}
+
+		const { username, yourname, date_of_birth } = await c.req.json();
+		
+		if (!username || !yourname || !date_of_birth) {
+			return c.json({ success: false, error: "All fields are required" }, 400);
+		}
+
+		const usernameRegex = /^[A-Za-z0-9_]{1,14}$/;
+		if (!usernameRegex.test(username)) {
+			return c.json({ success: false, error: "Username must be 1-14 characters, only A-Z, 0-9, and underscore" }, 400);
+		}
+
+		await c.env.DATA_DB.prepare(
+			`UPDATE user SET username = ?, yourname = ?, date_of_birth = ? WHERE id = ?`
+		).bind(username, yourname, date_of_birth, userId).run();
+
+		return c.json({ success: true });
+	} catch (error) {
+		console.error("Settings update error:", error);
+		return c.json({ success: false, error: "Failed to update settings" }, 500);
+	}
+});
+
 export default {
 	async fetch(request: Request, env: Env, ctx: ExecutionContext) {
 		const url = new URL(request.url);
 
-		if (url.pathname.startsWith('/users') || url.pathname === '/ws') {
+		if (url.pathname.startsWith('/users') || url.pathname === '/ws' || url.pathname === '/settings') {
 			return app.fetch(request, env, ctx);
 		}
 
@@ -90,15 +129,7 @@ export default {
 			},
 			success: async (ctx, value) => {
 				const userID = await getOrCreateUser(env, value.email);
-
-				const id = env.DATA_DO.idFromName('default');
-				const stub = env.DATA_DO.get(id);
-				await stub.fetch('https://internal/users/sync', {
-					method: 'POST',
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({ id: userID, email: value.email })
-				});
-
+				
 				return ctx.subject("user", {
 					id: userID,
 					email: value.email,
