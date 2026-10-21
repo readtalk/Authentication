@@ -5,6 +5,7 @@
 interface __BaseEnv_Env {
 	DATA_KV: KVNamespace;
 	DATA_DB: D1Database;
+	DATA_DO: DurableObject;
 }
 declare namespace Cloudflare {
 	interface GlobalProps {
