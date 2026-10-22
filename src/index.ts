@@ -1,4 +1,3 @@
-//
 import { issuer } from "@openauthjs/openauth";
 import {
 	CloudflareStorage,
@@ -11,7 +10,7 @@ import { object, string } from "valibot";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 
-export { Authentication } from "./authentication/authentication";
+export { Authentication } from "./authentication/auth";
 export { Room } from "./authentication/room";
 
 const subjects = createSubjects({
