@@ -20,6 +20,10 @@
 		"Authentication": {
 			"type": "durable-object",
 			"storage": "sqlite"
+		},
+		"Room": {
+			"type": "durable-object",
+			"storage": "sqlite"
 		}
 	},
 	"durable_objects": {
@@ -27,9 +31,19 @@
 			{
 				"class_name": "Authentication",
 				"name": "DATA_DO"
+			},
+			{
+				"class_name": "Room",
+				"name": "ROOM_DO"
 			}
 		]
 	},
+	"migrations": [
+		{
+			"tag": "v1",
+			"new_sqlite_classes": ["Room"]
+		}
+	],
 	"observability": {
 		"enabled": true
 	},
