@@ -109,6 +109,30 @@ export class Authentication extends DurableObject {
         });
     }
 
+    public async notify(chatId: string, message: any) {
+        const users = this.sql.exec(
+            `SELECT user_id FROM chat_user WHERE chat_id = ?`,
+            chatId
+        ).toArray() as { user_id: string }[];
+
+        const notification = JSON.stringify({
+            type: 'NEW_MESSAGE',
+            chatId,
+            message
+        });
+
+        for (const { user_id } of users) {
+            const socket = this.connections.get(user_id);
+            if (socket && socket.readyState === 1) {
+                try {
+                    socket.send(notification);
+                } catch {
+                    this.connections.delete(user_id);
+                }
+            }
+        }
+    }
+
     public async clientConnected(userId?: string) {
         const [client, server] = Object.values(new WebSocketPair());
 
