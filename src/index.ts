@@ -12,7 +12,7 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 
 export { Authentication } from "./authentication/authentication";
-export { Room } from "./room";
+export { Room } from "./authentication/room";
 
 const subjects = createSubjects({
 	user: object({
