@@ -11,6 +11,7 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 
 export { Authentication } from "./authentication/authentication";
+export { Room } from "./room";
 
 const subjects = createSubjects({
 	user: object({
@@ -32,7 +33,7 @@ app.get('/users', async (c) => {
 app.get('/users/online', async (c) => {
 	const id = c.env.DATA_DO.idFromName('default');
 	const stub = c.env.DATA_DO.get(id);
-	
+
 	const doUrl = new URL('https://do/users/online');
 	return stub.fetch(doUrl.toString());
 });
@@ -60,7 +61,7 @@ app.all('/ws', async (c) => {
 	}
 });
 
-app.all('/chats*', async (c) => {
+app.all('/chats/*', async (c) => {
 	const authHeader = c.req.header("Authorization");
 	if (!authHeader || !authHeader.startsWith("Bearer ")) {
 		return c.json({ success: false, error: "Unauthorized" }, 401);
@@ -69,22 +70,48 @@ app.all('/chats*', async (c) => {
 	const payload = JSON.parse(atob(token.split(".")[1]));
 	const userId = payload.properties?.id || payload.sub;
 
-	const id = c.env.DATA_DO.idFromName('default');
-	const stub = c.env.DATA_DO.get(id);
-	
-	const doUrl = new URL('https://do' + c.req.path);
-	doUrl.search = c.req.url.split('?')[1] || '';
+	const pathParts = c.req.path.split('/');
+	const isMessageRoute = pathParts.includes('messages') || pathParts.includes('upload');
 
-	const newHeaders = new Headers(c.req.raw.headers);
-	newHeaders.set("X-User-Id", userId);
-	
-	const newRequest = new Request(doUrl.toString(), {
-		method: c.req.method,
-		headers: newHeaders,
-		body: c.req.raw.body
-	});
+	if (isMessageRoute) {
+		const chatId = pathParts[2];
+		if (!chatId) return c.json({ success: false, error: "Chat ID required" }, 400);
 
-	return stub.fetch(newRequest);
+		const id = c.env.ROOM_DO.idFromName(`room-${chatId}`);
+		const stub = c.env.ROOM_DO.get(id);
+
+		const newHeaders = new Headers(c.req.raw.headers);
+		newHeaders.set("X-User-Id", userId);
+		newHeaders.set("X-Chat-Id", chatId);
+
+		const doUrl = new URL('https://do' + c.req.path.replace(`/chats/${chatId}`, '/chats'));
+		doUrl.search = c.req.url.split('?')[1] || '';
+
+		const newRequest = new Request(doUrl.toString(), {
+			method: c.req.method,
+			headers: newHeaders,
+			body: c.req.raw.body
+		});
+
+		return stub.fetch(newRequest);
+	} else {
+		const id = c.env.DATA_DO.idFromName('default');
+		const stub = c.env.DATA_DO.get(id);
+
+		const doUrl = new URL('https://do' + c.req.path);
+		doUrl.search = c.req.url.split('?')[1] || '';
+
+		const newHeaders = new Headers(c.req.raw.headers);
+		newHeaders.set("X-User-Id", userId);
+
+		const newRequest = new Request(doUrl.toString(), {
+			method: c.req.method,
+			headers: newHeaders,
+			body: c.req.raw.body
+		});
+
+		return stub.fetch(newRequest);
+	}
 });
 
 app.get('/settings', async (c) => {
@@ -94,7 +121,7 @@ app.get('/settings', async (c) => {
 	}
 
 	const token = authHeader.replace("Bearer ", "");
-	
+
 	try {
 		const payloadBase64 = token.split(".")[1];
 		const payload = JSON.parse(atob(payloadBase64));
@@ -126,7 +153,7 @@ app.post('/settings', async (c) => {
 	}
 
 	const token = authHeader.replace("Bearer ", "");
-	
+
 	try {
 		const payloadBase64 = token.split(".")[1];
 		const payload = JSON.parse(atob(payloadBase64));
@@ -137,7 +164,7 @@ app.post('/settings', async (c) => {
 		}
 
 		const { username, yourname, date_of_birth } = await c.req.json();
-		
+
 		if (!username || !yourname || !date_of_birth) {
 			return c.json({ success: false, error: "All fields are required" }, 400);
 		}
@@ -211,7 +238,7 @@ export default {
 
 				const id = env.DATA_DO.idFromName('default');
 				const stub = env.DATA_DO.get(id);
-				
+
 				await (stub as any).syncUserId(userID);
 
 				return ctx.subject("user", {
