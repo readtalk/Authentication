@@ -1,5 +1,5 @@
 {
-	"name": "openauth",
+	"name": "auth",
 	"description": "Deploy an OpenAuth server on Cloudflare Workers.",
 	"cloudflare": {
 		"label": "OpenAuth Server",
