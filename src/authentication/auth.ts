@@ -3,7 +3,7 @@ import { cors } from "hono/cors";
 import { DurableObject } from "cloudflare:workers";
 import { Browsable } from "@outerbase/browsable-durable-object";
 
-@browsable
+@browsable()
 export class Authentication extends DurableObject {
     private app: Hono = new Hono();
     public sql: SqlStorage;
