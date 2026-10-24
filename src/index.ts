@@ -22,7 +22,11 @@ const subjects = createSubjects({
 });
 
 const app = new Hono();
-app.use('*', cors());
+app.use('*', cors({
+	origin: '*',
+	allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+	allowHeaders: ['Content-Type', 'Authorization', 'X-User-Id', 'X-Session-Id', 'X-Chat-Id'],
+}));
 
 app.get('/users', async (c) => {
 	const users = await c.env.DATA_DB.prepare(
@@ -210,6 +214,17 @@ app.post('/settings', async (c) => {
 export default {
 	async fetch(request: Request, env: Env, ctx: ExecutionContext) {
 		const url = new URL(request.url);
+
+		if (request.method === 'OPTIONS') {
+			return new Response(null, {
+				status: 204,
+				headers: {
+					'Access-Control-Allow-Origin': '*',
+					'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+					'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-User-Id, X-Session-Id, X-Chat-Id',
+				}
+			});
+		}
 
 		if (url.pathname.startsWith('/updates')) {
 			const authHeader = request.headers.get("Authorization");
