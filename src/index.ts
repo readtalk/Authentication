@@ -211,10 +211,45 @@ export default {
 	async fetch(request: Request, env: Env, ctx: ExecutionContext) {
 		const url = new URL(request.url);
 
-		// TAMBAHAN: Rute untuk Update List (D1 DATA_BASE)
 		if (url.pathname.startsWith('/updates')) {
-			const updateList = new UpdateListHandler(env);
-			return updateList.getApp().fetch(request);
+			const authHeader = request.headers.get("Authorization");
+			if (!authHeader || !authHeader.startsWith("Bearer ")) {
+				return new Response(JSON.stringify({ success: false, error: "Unauthorized" }), { 
+					status: 401, 
+					headers: { "Content-Type": "application/json" } 
+				});
+			}
+			
+			const token = authHeader.replace("Bearer ", "");
+			try {
+				const payloadBase64 = token.split(".")[1];
+				const payload = JSON.parse(atob(payloadBase64));
+				const userId = payload.properties?.id || payload.sub;
+
+				if (!userId) {
+					return new Response(JSON.stringify({ success: false, error: "Invalid token" }), { 
+						status: 401, 
+						headers: { "Content-Type": "application/json" } 
+					});
+				}
+
+				const newHeaders = new Headers(request.headers);
+				newHeaders.set("X-User-Id", userId);
+				
+				const newRequest = new Request(request.url, {
+					method: request.method,
+					headers: newHeaders,
+					body: request.body
+				});
+
+				const updateList = new UpdateListHandler(env);
+				return updateList.getApp().fetch(newRequest);
+			} catch (error) {
+				return new Response(JSON.stringify({ success: false, error: "Invalid token" }), { 
+					status: 401, 
+					headers: { "Content-Type": "application/json" } 
+				});
+			}
 		}
 
 		if (url.pathname.startsWith('/users') || url.pathname === '/ws' || url.pathname === '/settings' || url.pathname.startsWith('/chats')) {
