@@ -25,9 +25,19 @@ app.use('*', cors());
 
 app.get('/users', async (c) => {
 	const users = await c.env.DATA_DB.prepare(
-		`SELECT id, email, username, yourname, date_of_birth, created_at FROM user`
+		`SELECT * FROM user`
 	).all();
 	return c.json({ success: true, users: users.results });
+});
+
+app.get('/users/:username', async (c) => {
+	const username = c.req.param('username');
+	const user = await c.env.DATA_DB.prepare(
+		`SELECT * FROM user WHERE username = ?`
+	).bind(username).first();
+	
+	if (!user) return c.json({ success: false, error: "User not found" }, 404);
+	return c.json({ success: true, user });
 });
 
 app.get('/users/online', async (c) => {
@@ -132,7 +142,7 @@ app.get('/settings', async (c) => {
 		}
 
 		const user = await c.env.DATA_DB.prepare(
-			`SELECT username, yourname, date_of_birth FROM user WHERE id = ?`
+			`SELECT * FROM user WHERE id = ?`
 		).bind(userId).first();
 
 		if (!user) {
@@ -163,10 +173,10 @@ app.post('/settings', async (c) => {
 			return c.json({ success: false, error: "Invalid token" }, 401);
 		}
 
-		const { username, yourname, date_of_birth } = await c.req.json();
+		const { username, yourname, date_of_birth, avatar, header, headline, about, socials, location } = await c.req.json();
 
 		if (!username || !yourname || !date_of_birth) {
-			return c.json({ success: false, error: "All fields are required" }, 400);
+			return c.json({ success: false, error: "Username, yourname, and date_of_birth are required" }, 400);
 		}
 
 		const usernameRegex = /^[A-Za-z0-9_]{1,14}$/;
@@ -175,8 +185,19 @@ app.post('/settings', async (c) => {
 		}
 
 		await c.env.DATA_DB.prepare(
-			`UPDATE user SET username = ?, yourname = ?, date_of_birth = ? WHERE id = ?`
-		).bind(username, yourname, date_of_birth, userId).run();
+			`UPDATE user SET username = ?, yourname = ?, date_of_birth = ?, avatar = ?, header = ?, headline = ?, about = ?, socials = ?, location = ? WHERE id = ?`
+		).bind(
+			username, 
+			yourname, 
+			date_of_birth, 
+			avatar || null, 
+			header || null, 
+			headline || null, 
+			about || null, 
+			socials || null, 
+			location || null, 
+			userId
+		).run();
 
 		return c.json({ success: true });
 	} catch (error) {
